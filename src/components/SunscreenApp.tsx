@@ -62,32 +62,42 @@ export default function SunscreenApp() {
   }, []);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout
-    if (isRunning) {
+    let interval: ReturnType<typeof setInterval>;
+    if (isRunning && timeRemaining > 0) {
       interval = setInterval(() => {
-        setProgress((prevProgress) => {
-          if (prevProgress >= 100) {
-            clearInterval(interval)
-            setIsRunning(false)
-            return 100
+        setTimeRemaining((prevTime) => {
+          if (prevTime <= 0) {
+            clearInterval(interval);
+            setIsRunning(false);
+            return 0;
           }
-          return prevProgress + 1
-        })
-      }, 100) // Adjust this value to change the speed of the progress bar
+          return prevTime - 1;
+        });
+      }, 1000); // Update every second
     }
-    return () => clearInterval(interval)
-  }, [isRunning])
+    return () => clearInterval(interval);
+  }, [isRunning]);
 
-  const getTimerDuration = (uvIndex: number, skinType: string): number | null => {
-    if (uvIndex < 3 || uvIndex > 8) {
+  // Calculate progress percentage
+  const calculateProgress = () => {
+    const duration = getTimerDuration(Number(uv_index), skinType);
+    if (!duration) return 0;
+    const totalSeconds = duration * 60;
+    const remainingSeconds = timeRemaining;
+    const progress = ((totalSeconds - remainingSeconds) / totalSeconds) * 100;
+    return Math.min(100, Math.max(0, progress));
+  };
+
+  const getTimerDuration = (uv_index: number, skinType: string): number | null => {
+    if (uv_index < 3 || uv_index > 8) {
       return null;
     }
     
-    if (uvIndex >= 3 && uvIndex <= 5) {
+    if (uv_index >= 3 && uv_index <= 5) {
       return skinType === 'light' ? 15 : 30;
     }
     
-    if (uvIndex > 5 && uvIndex <= 8) {
+    if (uv_index > 5 && uv_index <= 8) {
       return skinType === 'light' ? 9 : 17;
     }
     
@@ -95,7 +105,7 @@ export default function SunscreenApp() {
   };
 
   const handleStartTimer = () => {
-    const duration = getTimerDuration(uvIndex, skinType);
+    const duration = getTimerDuration(Number(uv_index), skinType);
     
     if (duration === null) {
       setIsRunning(false);
@@ -106,7 +116,6 @@ export default function SunscreenApp() {
     setIsRunning(true);
   };
 
-  const handleStart = () => setIsRunning(true)
   const handleStop = () => setIsRunning(false)
 
   return (
@@ -157,40 +166,34 @@ export default function SunscreenApp() {
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-100"
             />
           </div>
-          {uv_index < 3 && (
+          {Number(uv_index) < 3 && (
             <p className="text-yellow-600 mt-2">
               UV index is too low. Please try again when UV index is higher.
             </p>
           )}
 
-          {uv_index > 8 && (
+          {Number(uv_index) > 8 && (
             <p className="text-red-600 mt-2">
               UV index is too high. Please wait for safer conditions.
             </p>
           )}
 
-          {uv_index >= 3 && uv_index <= 8 && (
+          {Number(uv_index) >= 3 && Number(uv_index) <= 8 && (
             <div className="mt-4">
               <div className="relative pt-1">
                 <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-gray-200">
                   <div
-                    style={{ width: `${(timeRemaining / (getTimerDuration(Number(uv_index), skinType)! * 60)) * 100}%` }}
+                    style={{ width: `${calculateProgress()}%` }}
                     className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-blue-500"
                   ></div>
                 </div>
               </div>
-              <button
-                onClick={handleStartTimer}
-                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-              >
-                {isRunning ? 'Reset' : 'Start Timer'}
-              </button>
               <p className="mt-2">
-                Time Remaining: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')}
+                Exposure Required: {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, '0')} mins
               </p>
               <div className="mt-6 flex justify-center">
                 <button
-                  onClick={isRunning ? handleStop : handleStart}
+                  onClick={isRunning ? handleStop : handleStartTimer}
                   className={`px-4 py-2 rounded-md text-white font-semibold ${
                     isRunning ? 'bg-red-500 hover:bg-red-600' : 'bg-green-500 hover:bg-green-600'
                   }`}
