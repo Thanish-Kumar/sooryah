@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { Progress } from "@/components/ui/progress"
 
 const skinTypes = ['dark', 'light']
 
@@ -10,7 +9,6 @@ export default function SunscreenApp() {
   const [skinType, setSkinType] = useState(skinTypes[0])
   const [uv_index, setUvIndex] = useState('')
   const [isRunning, setIsRunning] = useState(false)
-  const [progress, setProgress] = useState(0)
   const [location, setLocation] = useState<{lat: number; lon: number} | null>(null)
   const [locationError, setLocationError] = useState<string>('')
   const [timeRemaining, setTimeRemaining] = useState(0)
